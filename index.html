@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Express chat app</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="initial-scale=1.0;width=device-width">
+	<style type="text/css">
+		:root {
+			--bg: #0A0A0A;
+			--width: 75%;
+		}
+		body {
+			margin: 0;
+			padding: 0;
+			background: linear-gradient(var(--bg), #334);
+			height: 100vh;
+			color: #FFF;
+			font-family: verdana, sans-serif;
+			font-size: 
+		}
+
+		h1 {
+			margin: 0 auto;
+			background: linear-gradient(to right, #050505, #444, #112, #AAA, #112, #444, #050505);
+			text-align: center;
+			padding: .5em 1em;
+			font-family: cursive;
+		}
+
+		.online {
+			width: calc(var(--width) + 1em);
+			max-width: calc(var(--width) + 1em);
+			min-width: 250px;
+			margin: 0 auto;
+			padding: .25em 1em;
+			text-align: right;
+			font-style: italic;
+			opacity: .75;
+		}
+
+		.online #clients-count {
+			font-weight: bold;
+			color: cyan;
+			animation: linear 1s infinite hueRotate;
+		}
+
+		.chat-history {
+			margin: 1em auto;
+			margin-top: 0;
+			padding: .25em 1em;
+			background-color: #050505;
+			width: var(--width);
+			max-width: var(--width);
+			min-width: 250px;
+			height: 50vh;
+			overflow-y: auto;
+			overflow-x: hidden;
+		}
+		.chat-history::-webkit-scrollbar {
+			width: 10px;
+			background-color: #111;
+		}
+		.chat-history::-webkit-scrollbar-thumb {
+			background-color: #BBB;
+		}
+		.chat-history::-webkit-scrollbar-thumb:hover {
+			background-color: #DDD;
+		}
+		.chat-history::-webkit-scrollbar-thumb:active {
+			background-color: #EEE;
+		}
+
+		.chat-history .message {
+			list-style: none;
+			padding-top: .25em;
+			padding-bottom: .25em;
+		}
+
+		.chat-history .message .author {
+			text-decoration: underline;
+			font-weight: bold;
+		}
+
+		.chat-history .message .content {
+			word-break: break-word
+		}
+
+		.chat-history .log {
+			list-style: none;
+			text-align: center;
+			font-style: italic;
+			opacity: .5;
+			font-size: .875em;
+			padding-top: .25em;
+			padding-bottom: .25em;
+		}
+
+		.msg-submit, .user-info {
+			position: relative;
+			padding: 0;
+			background-color: #050505;
+			height: 1em;
+			width: var(--width);
+			min-width: 250px;
+			margin: 1em auto;
+			border: none;
+			padding: .5em 1em;
+		}
+		.msg-submit #msgContent {
+			position: absolute;
+			background-color: transparent;
+			color: #FFF;
+			border: none;
+			left: 0;
+			top: 0;
+			bottom: 0;
+			padding: .25em 1em;
+			width: calc(100% - 2.25em);
+		}
+		.msg-submit input[type="submit"] {
+			transform: translate(-1.25em, 3em);
+			padding: .5em 1em;
+			background-color: #050505;
+			color: #FFF;
+			border-color: #FFF;
+			border-width: 1px;
+			border-radius: .25em;
+		}
+
+		.msg-submit input[type="submit"]:hover {cursor: pointer}
+
+		.msg-submit input[type="submit"]:disabled {
+			opacity: .5;
+			cursor: initial;
+		}
+
+		.user-info {
+			text-align: right;
+			background-color: transparent;
+			padding: 0;
+			transform: translate(1em);
+		}
+		.user-info label:hover {
+			cursor: pointer;
+		}
+		.user-info #username {
+			background-color: #050505;
+			color: #FFF;
+			border: none;
+			margin-left: .25em;
+			padding: .25em 1em;
+		}
+		.user-info select {
+			background-color: #050505;
+			color: #FFF;
+			margin-left: .25em;
+			margin-top: .5em;
+			padding: .25em;
+			border: none;
+		}
+
+
+		@keyframes hueRotate {
+			from {
+				filter: hue-rotate(0);
+			}
+			to {
+				filter: hue-rotate(360deg);
+			}
+		}
+
+
+		@media screen and (max-device-width: 1100px) {
+			
+
+			.chat-history, .online {
+				width: calc(100% - 2em);
+				max-width: calc(100% - 2em);
+			}
+
+			.msg-submit, .user-info {
+				width: calc(100% - 4em);
+				max-width: calc(100% - 4em);
+			}
+		}
+
+		@media screen and (max-width: 750px) {
+			h1 {
+				font-size: 1.25em;
+			}
+		}
+		@media screen and (max-width: 500px) {
+			.msg-submit input[type="submit"] {
+				transform: translate(-1.25em, 4em) !important;
+			}
+
+			.user-info label {
+				display: block;
+			}
+			.user-info label[for="msg-color"] {
+				margin-top: 1em;
+			}
+			.user-info select {
+				margin-top: 0;
+			}
+		}
+	</style>
+	<script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+	<script type="text/javascript">
+		// Connection
+		const socket = io()
+	</script>
+	<h1>Application tchat Express.js avec socket.io</h1>
+	<section class="chatbox">
+		<p class="online"><span id="clients-count">0</span> en ligne</p>
+		<form id="chat-form" action="">
+			<ul class="chat-history" id="chat-history"></ul>
+			<fieldset class="msg-submit">
+				<input type="text" id="msgContent" placeholder="Entrez un message" autocomplete="off" autofocus />
+				<input type="submit" id="submit-btn" value="Envoyer">
+			</fieldset>
+		</form>
+
+		<fieldset class="user-info">
+			<label for="username">
+				Votre nom:
+			</label>
+			<input type="text" id="username" value="Anonyme" oninput="handleUsernameInput()" onchange="logInNewName()">
+		</fieldset>
+		<fieldset class="user-info">
+			<label for="msg-color">
+				Couleur:
+			</label>
+			<select id="msg-color" class="color-demo" value="Anonyme" onchange="saveColor(this.value)">
+				<option value="pink" style="color: pink">Rose</option>
+				<option value="blue" style="color: blue">Bleu</option>
+				<option value="cyan" style="color: cyan">Cyan</option>
+				<option value="crimson" style="color: crimson">Rouge</option>
+				<option value="orange" style="color: orange">Orange</option>
+				<option value="yellow" style="color: yellow">Jaune</option>
+				<option value="lightgreen" style="color: lightgreen">Vert</option>
+				<option value="violet" style="color: violet">Violet</option>
+				<option value="lightgrey" style="color: lightgrey">Gris</option>
+			</select>
+		</fieldset>
+	</section>
+	<script type="text/javascript">
+		// Send msg
+		const sendMessage = ev => {
+			ev.preventDefault()
+			const author = document.getElementById('username').value
+			if(author) {
+				const msgContent = document.getElementById('msgContent')
+				if(msgContent.value) {
+					const msg = {
+						content: msgContent.value,
+						author: author,
+						color: document.getElementById('msg-color').value
+					}
+					socket.emit('chat message', msg)
+					msgContent.value = ''
+				}
+			}
+		}
+
+		// Receive msg
+		const receiveMessage = (msg) => {
+			const { content, author, color } = msg
+			const chatHistory = document.getElementById('chat-history')
+			const msgElem = document.createElement('li')
+			msgElem.classList = 'message'
+
+			// Set author
+			const authorElem = document.createElement('span')
+			authorElem.classList = 'author'
+			authorElem.textContent = author + ':'
+			authorElem.style.color = color
+			msgElem.appendChild(authorElem)
+
+			// Set content
+			const contentElem = document.createElement('span')
+			contentElem.classList = 'content'
+			contentElem.textContent = '  ' + content
+			msgElem.appendChild(contentElem)
+
+			chatHistory.appendChild(msgElem)
+			chatHistory.scrollTop = chatHistory.scrollTop + msgElem.clientHeight
+		}
+
+		// Receive log
+		const receiveLog = log => {
+			const chatHistory = document.getElementById('chat-history')
+			const logElem = document.createElement('li')
+			logElem.classList = "log"
+			logElem.textContent = log
+			chatHistory.appendChild(logElem)
+		}
+
+		// Display clients count
+		socket.on('clientsCount', count => document.getElementById('clients-count').textContent = count)
+
+		// Msg listener
+		socket.on('chat message', msg => receiveMessage(msg))
+		// Log listener
+		socket.on('log', log => receiveLog(log))
+
+		// DOM event listeners
+		  // Handle msg form
+		const chatForm = document.getElementById('chat-form')
+		chatForm.onsubmit = ev => sendMessage(ev)
+
+		  // Fetch user info from local storage
+	  	const usernameFromLS = window.localStorage['expressChatAppUserName']
+	  	const colorFromLS = window.localStorage['expressChatAppColor']
+
+	  	if(usernameFromLS) {
+	  		document.getElementById('username').value = usernameFromLS
+	  	}
+	  	if(colorFromLS) {
+	  		const selector = document.getElementById('msg-color')
+	  		selector.value = colorFromLS
+	  		selector.style.color = colorFromLS
+	  	}
+
+		// Handle username
+		function handleUsernameInput () {
+			const username = document.getElementById('username').value
+			const submitBTN = document.getElementById('submit-btn')
+
+			// Disable submit btn if no username is chosen
+			submitBTN.disabled = username ? false : true
+			submitBTN.value = username ? 'Envoyer' : 'Choisissez un nom'
+		}
+
+		function logInNewName () {
+			const newName = document.getElementById('username').value
+
+			// Store in local storage
+			window.localStorage['expressChatAppUserName'] = username.value
+
+			// Dispatch socket event
+			socket.emit('name change', lastUsername, newName)
+
+			lastUsername = newName
+		}
+
+		// Save color
+		function saveColor (color) {
+			document.getElementById('msg-color').style.color = color
+
+			window.localStorage['expressChatAppColor'] = color
+			socket.emit('color change', document.getElementById('username').value, color)
+		}
+
+		// Last username value
+		let lastUsername = document.getElementById('username').value
+	</script>
+</body>
+</html>

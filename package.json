@@ -1,0 +1,11 @@
+{
+  "name": "Express_app",
+  "version": "1.0.0",
+  "description": "Learn Express framework",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1",
+    "socket.io": "^2.3.0"
+  }
+}
